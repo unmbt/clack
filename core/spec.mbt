@@ -249,6 +249,13 @@ pub(all) enum BodyView {
     separator~ : String,
     inline_error~ : String?,
   )
+  CustomLines(
+    header~ : Array[String],
+    lines~ : Array[String],
+    cursor_line~ : Int32?,
+    footer~ : Array[String],
+    clear_on_submit~ : Bool,
+  )
 }
 
 ///|
@@ -320,6 +327,14 @@ declare pub fn limit_options(
   column_padding? : Int32,
   row_padding? : Int32,
   ellipsis? : String,
+) -> Array[String]
+
+///|
+declare pub fn slice_viewport_lines(
+  lines : Array[String],
+  cursor_line : Int32,
+  cols : Int32,
+  max_rows : Int32,
 ) -> Array[String]
 
 ///|

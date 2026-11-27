@@ -52,6 +52,7 @@ async fn[T] run_prompt_core(
   set_phase? : (@core.PromptPhase) -> Unit,
   validate_async? : async (T) -> String?,
   after_key? : async () -> Unit noraise,
+  on_background? : async (async () -> Unit noraise) -> Unit noraise,
   session? : Session,
 ) -> @core.PromptOutcome[T] raise @term.TermError {
   let s = resolve_session(session)
@@ -69,143 +70,208 @@ async fn[T] run_prompt_core(
   let renderer = @core.InlineDiffRenderer()
   let decoder = @core.KeyDecoder()
   let (init_cols, init_rows) = term.size()
-  let mut prev_cols = if init_cols > 0 { init_cols } else { 80 }
-  let mut prev_rows = if init_rows > 0 { init_rows } else { 24 }
+  let prev_cols : Ref[Int32] = Ref(if init_cols > 0 { init_cols } else { 80 })
+  let prev_rows : Ref[Int32] = Ref(if init_rows > 0 { init_rows } else { 24 })
+  let finished : Ref[Bool] = Ref(false)
+  let render_lock = @async.Semaphore(1)
+  let final_outcome : Ref[@core.PromptOutcome[T]?] = Ref(None)
 
   let initial_lines = render_spec_lines(
     s,
     (adapter.view)(),
-    prev_cols,
-    prev_rows,
+    prev_cols.val,
+    prev_rows.val,
   )
   let first_patch = renderer.patch(
     initial_lines,
-    prev_cols,
+    prev_cols.val,
     sync_output=sync_out,
   )
   if first_patch != "" {
     term.write_str(first_patch)
   }
 
-  for ;; {
-    let events : Array[@core.KeyEvent] = if decoder.has_pending_escape() {
-      match read_bytes_with_timeout(term, 20) {
-        Some(Some(chunk)) => decoder.feed(chunk[:])
-        Some(None) =>
-          match decoder.flush_escape() {
-            Some(ev) => [ev]
-            None => return Cancelled
-          }
-        None =>
-          match decoder.flush_escape() {
-            Some(ev) => [ev]
-            None => []
-          }
-      }
-    } else {
-      match term.read_bytes() {
-        Some(chunk) => decoder.feed(chunk[:])
-        None =>
-          match decoder.flush_escape() {
-            Some(ev) => [ev]
-            None => return Cancelled
-          }
-      }
+  let redraw : async () -> Unit noraise = async fn() noraise {
+    render_lock.acquire()
+    defer render_lock.release()
+    if finished.val {
+      return
     }
-
     let (cur_cols_raw, cur_rows_raw) = term.size()
     let cur_cols = if cur_cols_raw > 0 { cur_cols_raw } else { 80 }
     let cur_rows = if cur_rows_raw > 0 { cur_rows_raw } else { 24 }
-    let resized = cur_cols != prev_cols
-    prev_cols = cur_cols
-    prev_rows = cur_rows
+    let resized = cur_cols != prev_cols.val
+    prev_cols.val = cur_cols
+    prev_rows.val = cur_rows
+    let lines = render_spec_lines(s, (adapter.view)(), cur_cols, cur_rows)
+    let prefix = if resized { renderer.on_resize() } else { "" }
+    let patched = prefix + renderer.patch(lines, cur_cols, sync_output=sync_out)
+    if patched != "" {
+      term.write_str(patched) catch {
+        _ => ()
+      }
+    }
+  }
 
-    let mut outcome : @core.PromptOutcome[T]? = None
-    for ev in events {
-      match (adapter.on_key)(ev, allow_back) {
+  @async.with_task_group(group => {
+    for ;; {
+      let events : Array[@core.KeyEvent] = if decoder.has_pending_escape() {
+        match read_bytes_with_timeout(term, 20) {
+          Some(Some(chunk)) => decoder.feed(chunk[:])
+          Some(None) =>
+            match decoder.flush_escape() {
+              Some(ev) => [ev]
+              None => {
+                finished.val = true
+                final_outcome.val = Some(Cancelled)
+                break
+              }
+            }
+          None =>
+            match decoder.flush_escape() {
+              Some(ev) => [ev]
+              None => []
+            }
+        }
+      } else {
+        match term.read_bytes() {
+          Some(chunk) => decoder.feed(chunk[:])
+          None =>
+            match decoder.flush_escape() {
+              Some(ev) => [ev]
+              None => {
+                finished.val = true
+                final_outcome.val = Some(Cancelled)
+                break
+              }
+            }
+        }
+      }
+
+      let (cur_cols_raw, cur_rows_raw) = term.size()
+      let cur_cols = if cur_cols_raw > 0 { cur_cols_raw } else { 80 }
+      let cur_rows = if cur_rows_raw > 0 { cur_rows_raw } else { 24 }
+      let resized = cur_cols != prev_cols.val
+      prev_cols.val = cur_cols
+      prev_rows.val = cur_rows
+
+      let mut outcome : @core.PromptOutcome[T]? = None
+      for ev in events {
+        match (adapter.on_key)(ev, allow_back) {
+          Some(res) => {
+            outcome = Some(res)
+            break
+          }
+          None => ()
+        }
+      }
+
+      match after_key {
+        Some(hook) => hook()
+        None => ()
+      }
+
+      // Async validation hook on submit
+      match (outcome, validate_async) {
+        (Some(Submitted(val)), Some(vfn)) => {
+          match set_phase {
+            Some(sp) => sp(Validating)
+            None => ()
+          }
+          render_lock.acquire()
+          let val_lines = render_spec_lines(
+            s,
+            (adapter.view)(),
+            prev_cols.val,
+            prev_rows.val,
+          )
+          let prefix = if resized { renderer.on_resize() } else { "" }
+          let val_patch = prefix +
+            renderer.patch(val_lines, prev_cols.val, sync_output=sync_out)
+          if val_patch != "" {
+            term.write_str(val_patch)
+          }
+          render_lock.release()
+          match run_async_validator(vfn, val) {
+            Some(err_msg) => {
+              match set_phase {
+                Some(sp) => sp(Error(err_msg))
+                None => ()
+              }
+              render_lock.acquire()
+              let err_lines = render_spec_lines(
+                s,
+                (adapter.view)(),
+                prev_cols.val,
+                prev_rows.val,
+              )
+              let err_patch = renderer.patch(
+                err_lines,
+                prev_cols.val,
+                sync_output=sync_out,
+              )
+              if err_patch != "" {
+                term.write_str(err_patch)
+              }
+              render_lock.release()
+              continue
+            }
+            None =>
+              match set_phase {
+                Some(sp) => sp(Submitted)
+                None => ()
+              }
+          }
+        }
+        _ => ()
+      }
+
+      render_lock.acquire()
+      let lines = render_spec_lines(
+        s,
+        (adapter.view)(),
+        prev_cols.val,
+        prev_rows.val,
+      )
+      match outcome {
         Some(res) => {
-          outcome = Some(res)
+          finished.val = true
+          let prefix = if resized { renderer.on_resize() } else { "" }
+          let committed = prefix +
+            renderer.commit(lines, prev_cols.val, sync_output=sync_out)
+          term.write_str(committed)
+          render_lock.release()
+          final_outcome.val = Some(res)
           break
+        }
+        None => {
+          let prefix = if resized { renderer.on_resize() } else { "" }
+          let patched = prefix +
+            renderer.patch(lines, prev_cols.val, sync_output=sync_out)
+          if patched != "" {
+            term.write_str(patched)
+          }
+          render_lock.release()
+        }
+      }
+
+      match on_background {
+        Some(bg_hook) => {
+          group.spawn_bg(no_wait=true, allow_failure=true, async fn() {
+            bg_hook(redraw)
+          })
+          @async.pause()
         }
         None => ()
       }
     }
-
-    match after_key {
-      Some(hook) => hook()
-      None => ()
-    }
-
-    // Async validation hook on submit
-    match (outcome, validate_async) {
-      (Some(Submitted(val)), Some(vfn)) => {
-        match set_phase {
-          Some(sp) => sp(Validating)
-          None => ()
-        }
-        let val_lines = render_spec_lines(
-          s,
-          (adapter.view)(),
-          prev_cols,
-          prev_rows,
-        )
-        let prefix = if resized { renderer.on_resize() } else { "" }
-        let val_patch = prefix +
-          renderer.patch(val_lines, prev_cols, sync_output=sync_out)
-        if val_patch != "" {
-          term.write_str(val_patch)
-        }
-        match run_async_validator(vfn, val) {
-          Some(err_msg) => {
-            match set_phase {
-              Some(sp) => sp(Error(err_msg))
-              None => ()
-            }
-            let err_lines = render_spec_lines(
-              s,
-              (adapter.view)(),
-              prev_cols,
-              prev_rows,
-            )
-            let err_patch = renderer.patch(
-              err_lines,
-              prev_cols,
-              sync_output=sync_out,
-            )
-            if err_patch != "" {
-              term.write_str(err_patch)
-            }
-            continue
-          }
-          None =>
-            match set_phase {
-              Some(sp) => sp(Submitted)
-              None => ()
-            }
-        }
-      }
-      _ => ()
-    }
-
-    let lines = render_spec_lines(s, (adapter.view)(), prev_cols, prev_rows)
-    match outcome {
-      Some(res) => {
-        let prefix = if resized { renderer.on_resize() } else { "" }
-        let committed = prefix +
-          renderer.commit(lines, prev_cols, sync_output=sync_out)
-        term.write_str(committed)
-        return res
-      }
-      None => {
-        let prefix = if resized { renderer.on_resize() } else { "" }
-        let patched = prefix +
-          renderer.patch(lines, prev_cols, sync_output=sync_out)
-        if patched != "" {
-          term.write_str(patched)
-        }
-      }
-    }
+  }) catch {
+    @term.TermError::IoFailure(msg) => raise IoFailure(msg)
+    @term.TermError::NotInteractive(msg) => raise NotInteractive(msg)
+    @term.TermError::EndOfInput => raise EndOfInput
+    err => raise IoFailure("\{Repr(err)}")
   }
+  final_outcome.val.unwrap_or(Cancelled)
 }
 
 ///|
@@ -214,12 +280,15 @@ async fn[T] run_prompt_core(
 /// - Guarantees terminal restoration via `defer` + `nocancel` on submit, error, Ctrl+C, or task cancellation
 /// - Performs 20ms bare-ESC disambiguation via `KeyDecoder::has_pending_escape` / `flush_escape`
 /// - Detects terminal `size()` changes and reflows cleanly via `InlineDiffRenderer::on_resize`
+/// - Optionally runs non-blocking `on_background` tasks with a serialized `redraw` callback
 pub async fn[T] run_prompt(
   adapter : @core.PromptAdapter[T],
   allow_back~ : Bool = false,
+  after_key? : async () -> Unit noraise,
+  on_background? : async (async () -> Unit noraise) -> Unit noraise,
   session? : Session,
 ) -> @core.PromptOutcome[T] raise @term.TermError {
-  run_prompt_core(adapter, allow_back~, session?)
+  run_prompt_core(adapter, allow_back~, after_key?, on_background?, session?)
 }
 
 ///|

@@ -298,3 +298,134 @@ async test "prompts: Spinner::clear and Progress::cancel/clear + accessible mode
   inspect(out.contains("■  "), content="true")
   inspect(out.contains("Aborted"), content="true")
 }
+
+///|
+async test "prompts: run_prompt supports CustomLines and async after_key hook" {
+  let vt = @term.VirtualTerminal([b"\x1b[C", b"\r"], cols=60, rows=12, tty=true)
+  let s = @prompts.Session(term=vt, color_level=None)
+  let state = Ref("initial")
+  let loaded = Ref(false)
+  let phase : Ref[@core.PromptPhase] = Ref(Active)
+  let adapter = @core.PromptAdapter(
+    on_key=fn(ev, _) {
+      match ev.code {
+        Right => {
+          state.val = "opened"
+          None
+        }
+        Enter => {
+          phase.val = Submitted
+          Some(Submitted(state.val))
+        }
+        _ => None
+      }
+    },
+    view=fn() {
+      let body_line = if loaded.val { "loaded-detail" } else { state.val }
+      {
+        phase: phase.val,
+        message: "",
+        body: CustomLines(
+          header=["Header"],
+          lines=[body_line],
+          cursor_line=Some(0),
+          footer=[],
+          clear_on_submit=true,
+        ),
+        submitted_summary: None,
+        with_guide: false,
+        max_rows: None,
+      }
+    },
+  )
+  let res = @prompts.run_prompt(
+    adapter,
+    after_key=async fn() noraise {
+      if state.val == "opened" {
+        @async.sleep(1)
+        loaded.val = true
+      }
+    },
+    session=s,
+  )
+  debug_inspect(res, content="Submitted(\"opened\")")
+  inspect(vt.all_output().contains("loaded-detail"), content="true")
+  inspect(vt.in_raw_mode(), content="false")
+}
+
+///|
+async test "prompts: run_prompt on_background redraws live without blocking key input" {
+  let frames : Array[String] = []
+  let ct = @term.CallbackTerminal(
+    on_write=chunk => frames.push(chunk.to_owned()),
+    cols=60,
+    rows=12,
+    tty=true,
+  )
+  let s = @prompts.Session(term=ct, color_level=None)
+  let status = Ref("idle")
+  let pending = Ref(false)
+  let phase : Ref[@core.PromptPhase] = Ref(Active)
+  let adapter = @core.PromptAdapter(
+    on_key=fn(ev, _) {
+      match ev.code {
+        Right => {
+          status.val = "loading 0/1"
+          pending.val = true
+          None
+        }
+        Enter => {
+          phase.val = Submitted
+          Some(Submitted(status.val))
+        }
+        _ => None
+      }
+    },
+    view=fn() {
+      {
+        phase: phase.val,
+        message: "",
+        body: CustomLines(
+          header=["Header"],
+          lines=[status.val],
+          cursor_line=Some(0),
+          footer=[],
+          clear_on_submit=true,
+        ),
+        submitted_summary: None,
+        with_guide: false,
+        max_rows: None,
+      }
+    },
+  )
+  let res : Ref[@core.PromptOutcome[String]?] = Ref(None)
+  @async.with_task_group(group => {
+    group.spawn_bg(async fn() {
+      res.val = Some(
+        @prompts.run_prompt(
+          adapter,
+          on_background=async fn(redraw) noraise {
+            if pending.val {
+              pending.val = false
+              @async.sleep(15)
+              status.val = "loaded 1/1"
+              redraw()
+            }
+          },
+          session=s,
+        ),
+      )
+    })
+    @async.sleep(5)
+    ct.push_input(b"\x1b[C")
+    // Immediately rendered "loading 0/1" before the 15ms background task completes
+    @async.sleep(5)
+    inspect(frames.join("").contains("loading 0/1"), content="true")
+    // Wait for background redraw to paint "loaded 1/1"
+    @async.sleep(30)
+    inspect(frames.join("").contains("loaded 1/1"), content="true")
+    ct.push_input(b"\r")
+  })
+  debug_inspect(res.val, content="Some(Submitted(\"loaded 1/1\"))")
+  inspect(ct.in_raw_mode(), content="false")
+}

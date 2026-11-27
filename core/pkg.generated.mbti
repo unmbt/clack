@@ -13,6 +13,8 @@ pub fn limit_options(Array[String], Int32, Int32, Int32, max_items? : Int32, col
 
 pub fn render_box(StringView, title? : StringView, cols? : Int32, styler? : @ansi.Styler, unicode? : Bool, with_guide? : Bool, content_align? : BoxAlign, title_align? : BoxAlign, width? : BoxWidth, title_padding? : Int32, content_padding? : Int32, rounded? : Bool, format_border? : (String) -> String) -> String
 
+pub fn slice_viewport_lines(Array[String], Int32, Int32, Int32) -> Array[String]
+
 // Errors
 
 // Types and methods
@@ -48,6 +50,7 @@ pub(all) enum BodyView {
   SelectKeyList(items~ : Array[SelectKeyRowView])
   MultiLineInput(lines~ : Array[String], cursor_line~ : Int32, cursor_col~ : Int32, placeholder~ : String?, is_empty~ : Bool, show_submit~ : Bool, submit_focused~ : Bool)
   DateInput(segments~ : Array[DateSegmentView], separator~ : String, inline_error~ : String?)
+  CustomLines(header~ : Array[String], lines~ : Array[String], cursor_line~ : Int32?, footer~ : Array[String], clear_on_submit~ : Bool)
 }
 
 #derive(Eq, @debug.Debug)

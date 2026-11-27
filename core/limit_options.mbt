@@ -197,3 +197,70 @@ pub fn limit_options(
   }
   result
 }
+
+///|
+/// Slice `lines` to fit within `max_rows` physical terminal rows (accounting
+/// for ANSI-aware wrapping at `cols`) while keeping `cursor_line` centered in
+/// the viewport whenever possible.
+pub fn slice_viewport_lines(
+  lines : Array[String],
+  cursor_line : Int32,
+  cols : Int32,
+  max_rows : Int32,
+) -> Array[String] {
+  let total = lines.length()
+  if total == 0 || max_rows <= 0 {
+    return []
+  }
+  let effective_cols : Int32 = if cols > 0 { cols } else { 80 }
+  let heights : Array[Int32] = []
+  let mut total_rows : Int32 = 0
+  for ln in lines {
+    let h = @ansi.wrapped_line_count(ln, effective_cols)
+    let clamped_h : Int32 = if h < 1 { 1 } else { h }
+    heights.push(clamped_h)
+    total_rows += clamped_h
+  }
+  if total_rows <= max_rows {
+    return lines.copy()
+  }
+  let safe_cursor : Int32 = if cursor_line < 0 {
+    0
+  } else if cursor_line >= total {
+    total - 1
+  } else {
+    cursor_line
+  }
+  let mut start = safe_cursor
+  let mut end = safe_cursor + 1
+  let mut used = heights[safe_cursor]
+  let mut prefer_up = true
+  while used < max_rows {
+    let can_up = start > 0 && used + heights[start - 1] <= max_rows
+    let can_down = end < total && used + heights[end] <= max_rows
+    if !can_up && !can_down {
+      break
+    }
+    if prefer_up {
+      if can_up {
+        start -= 1
+        used += heights[start]
+      } else if can_down {
+        used += heights[end]
+        end += 1
+      }
+    } else if can_down {
+      used += heights[end]
+      end += 1
+    } else if can_up {
+      start -= 1
+      used += heights[start]
+    }
+    prefer_up = !prefer_up
+  }
+  let out : Array[String] = []
+  for i in start..<end {
+    out.push(lines[i])
+  }
+  out
+}

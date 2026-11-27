@@ -621,3 +621,54 @@ test "PromptOutcome helpers, render_box, SelectKey, AutocompleteMultiSelect, Mul
     content="Some(Submitted({ year: 2024, month: 2, day: 29 }))",
   )
 }
+
+///|
+test "slice_viewport_lines, BodyView::CustomLines, and empty commit erase" {
+  let many : Array[String] = []
+  for i in 0..<20 {
+    many.push("Row \{i}")
+  }
+  let sliced = @core.slice_viewport_lines(many, 10, 80, 5)
+  inspect(sliced.length(), content="5")
+  inspect(sliced.contains("Row 10"), content="true")
+  inspect(sliced[0], content="Row 8")
+  inspect(sliced[4], content="Row 12")
+
+  // Frameless CustomLines with clear_on_submit=true
+  let plain = @ansi.Styler(level=None)
+  let clack = @core.ClackTheme()
+  let minimal = @core.MinimalTheme()
+  let active_spec : @core.FrameSpec = {
+    phase: Active,
+    message: "",
+    body: CustomLines(
+      header=["┃ Header"],
+      lines=["line0", "line1", "line2"],
+      cursor_line=Some(1),
+      footer=["Footer"],
+      clear_on_submit=true,
+    ),
+    submitted_summary: None,
+    with_guide: false,
+    max_rows: Some(10),
+  }
+  debug_inspect(
+    clack.render_frame(active_spec, plain, 80),
+    content="[\"┃ Header\", \"line0\", \"line1\", \"line2\", \"Footer\"]",
+  )
+  debug_inspect(
+    minimal.render_frame(active_spec, plain, 80),
+    content="[\"┃ Header\", \"line0\", \"line1\", \"line2\", \"Footer\"]",
+  )
+  let done_spec : @core.FrameSpec = { ..active_spec, phase: Submitted, }
+  debug_inspect(clack.render_frame(done_spec, plain, 80), content="[]")
+  debug_inspect(minimal.render_frame(done_spec, plain, 80), content="[]")
+
+  // Empty commit erases previous frame without emitting trailing CRLF
+  let renderer = @core.InlineDiffRenderer()
+  ignore(renderer.patch(["a", "b"], 40, sync_output=false))
+  inspect(
+    renderer.commit([], 40, sync_output=false),
+    content="\u{001b}[1A\r\u{001b}[J",
+  )
+}

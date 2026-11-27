@@ -54,7 +54,7 @@ pub async fn path(String, root? : String, directory? : Bool, initial_value? : St
 
 pub async fn path_with(String, exists~ : async (String) -> Bool, is_dir~ : async (String) -> Bool, list_dir~ : async (String) -> Array[@prompts.PathEntry], root? : String, directory? : Bool, initial_value? : String, validate? : (String) -> String?, allow_back? : Bool, session? : @prompts.Session) -> @core.PromptOutcome[String] raise @term.TermError
 
-pub async fn[T] run_prompt(@core.PromptAdapter[T], allow_back? : Bool, session? : @prompts.Session) -> @core.PromptOutcome[T] raise @term.TermError
+pub async fn[T] run_prompt(@core.PromptAdapter[T], allow_back? : Bool, after_key? : async () -> Unit noraise, on_background? : async (async () -> Unit noraise) -> Unit noraise, session? : @prompts.Session) -> @core.PromptOutcome[T] raise @term.TermError
 
 pub async fn[State] run_wizard(State, Array[@flow.Step[State]], session? : @prompts.Session) -> @core.PromptOutcome[State] raise @term.TermError
 

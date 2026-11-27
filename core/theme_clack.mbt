@@ -361,6 +361,51 @@ pub impl Theme for ClackTheme with fn render_frame(self, spec, styler, cols) {
     Some(r) if r > 0 => r
     _ => 24
   }
+  match spec.body {
+    CustomLines(
+      header~,
+      lines=custom_lines,
+      cursor_line~,
+      footer~,
+      clear_on_submit~,
+    ) => {
+      if clear_on_submit && spec.phase is (Submitted | Cancelled) {
+        return []
+      }
+      if !has_guide && spec.message == "" {
+        let mut reserved : Int32 = 1
+        for h in header {
+          reserved += @ansi.wrapped_line_count(h, effective_cols)
+        }
+        for f in footer {
+          reserved += @ansi.wrapped_line_count(f, effective_cols)
+        }
+        let body_budget : Int32 = if effective_rows - reserved > 1 {
+          effective_rows - reserved
+        } else {
+          1
+        }
+        let sliced = slice_viewport_lines(
+          custom_lines,
+          cursor_line.unwrap_or(0),
+          effective_cols,
+          body_budget,
+        )
+        let out : Array[String] = []
+        for h in header {
+          out.push(h)
+        }
+        for ln in sliced {
+          out.push(ln)
+        }
+        for f in footer {
+          out.push(f)
+        }
+        return out
+      }
+    }
+    _ => ()
+  }
   let lines : Array[String] = []
   if has_guide {
     lines.push(styler.gray(self.s_bar()))
@@ -857,6 +902,47 @@ pub impl Theme for ClackTheme with fn render_frame(self, spec, styler, cols) {
       match inline_error {
         Some(err) if err != "" => lines.push(active_bar + styler.yellow(err))
         _ => ()
+      }
+      match spec.phase {
+        Warning(msg) | Error(msg) => {
+          let err_tail = if msg != "" { "  " + styler.yellow(msg) } else { "" }
+          lines.push(active_end + err_tail)
+        }
+        _ => if has_guide { lines.push(active_end) }
+      }
+    }
+    CustomLines(header~, lines=custom_lines, cursor_line~, footer~, ..) => {
+      let col_pad : Int32 = if has_guide { 3 } else { 0 }
+      let inner_cols : Int32 = if effective_cols - col_pad > 1 {
+        effective_cols - col_pad
+      } else {
+        1
+      }
+      for h in header {
+        lines.push(active_bar + h)
+      }
+      let mut reserved : Int32 = lines.length() +
+        1 +
+        (if has_guide { 1 } else { 0 })
+      for f in footer {
+        reserved += @ansi.wrapped_line_count(f, inner_cols)
+      }
+      let body_budget : Int32 = if effective_rows - reserved > 1 {
+        effective_rows - reserved
+      } else {
+        1
+      }
+      let sliced = slice_viewport_lines(
+        custom_lines,
+        cursor_line.unwrap_or(0),
+        inner_cols,
+        body_budget,
+      )
+      for ln in sliced {
+        lines.push(active_bar + ln)
+      }
+      for f in footer {
+        lines.push(active_bar + f)
       }
       match spec.phase {
         Warning(msg) | Error(msg) => {

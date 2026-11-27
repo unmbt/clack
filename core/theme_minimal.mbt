@@ -44,6 +44,51 @@ pub impl Theme for MinimalTheme with fn render_frame(self, spec, styler, cols) {
     Some(r) if r > 0 => r
     _ => 24
   }
+  match spec.body {
+    CustomLines(
+      header~,
+      lines=custom_lines,
+      cursor_line~,
+      footer~,
+      clear_on_submit~,
+    ) => {
+      if clear_on_submit && spec.phase is (Submitted | Cancelled) {
+        return []
+      }
+      if spec.message == "" {
+        let mut reserved : Int32 = 1
+        for h in header {
+          reserved += @ansi.wrapped_line_count(h, effective_cols)
+        }
+        for f in footer {
+          reserved += @ansi.wrapped_line_count(f, effective_cols)
+        }
+        let body_budget : Int32 = if effective_rows - reserved > 1 {
+          effective_rows - reserved
+        } else {
+          1
+        }
+        let sliced = slice_viewport_lines(
+          custom_lines,
+          cursor_line.unwrap_or(0),
+          effective_cols,
+          body_budget,
+        )
+        let out : Array[String] = []
+        for h in header {
+          out.push(h)
+        }
+        for ln in sliced {
+          out.push(ln)
+        }
+        for f in footer {
+          out.push(f)
+        }
+        return out
+      }
+    }
+    _ => ()
+  }
   let lead = self.prefix(spec.phase, styler) + " " + styler.bold(spec.message)
   let summary = match spec.submitted_summary {
     Some(s) => s
@@ -326,6 +371,34 @@ pub impl Theme for MinimalTheme with fn render_frame(self, spec, styler, cols) {
       match inline_error {
         Some(err) if err != "" => lines.push(styler.yellow(err))
         _ => ()
+      }
+    }
+    CustomLines(header~, lines=custom_lines, cursor_line~, footer~, ..) => {
+      lines.push(lead)
+      let mut reserved : Int32 = 2
+      for h in header {
+        lines.push(h)
+        reserved += @ansi.wrapped_line_count(h, effective_cols)
+      }
+      for f in footer {
+        reserved += @ansi.wrapped_line_count(f, effective_cols)
+      }
+      let body_budget : Int32 = if effective_rows - reserved > 1 {
+        effective_rows - reserved
+      } else {
+        1
+      }
+      let sliced = slice_viewport_lines(
+        custom_lines,
+        cursor_line.unwrap_or(0),
+        effective_cols,
+        body_budget,
+      )
+      for ln in sliced {
+        lines.push(ln)
+      }
+      for f in footer {
+        lines.push(f)
       }
     }
   }

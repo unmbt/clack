@@ -89,13 +89,15 @@ pub fn InlineDiffRenderer::commit(
     buf.write_string(SYNC_START)
   }
   write_erase_previous(buf, self.has_rendered, self.prev_physical_rows)
-  for i in 0..<final_lines.length() {
-    if i > 0 {
-      buf.write_string("\r\n")
+  if !final_lines.is_empty() {
+    for i in 0..<final_lines.length() {
+      if i > 0 {
+        buf.write_string("\r\n")
+      }
+      buf.write_string(final_lines[i])
     }
-    buf.write_string(final_lines[i])
+    buf.write_string("\r\n")
   }
-  buf.write_string("\r\n")
   if sync_output {
     buf.write_string(SYNC_END)
   }
