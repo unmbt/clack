@@ -1,6 +1,6 @@
 # unmbt/clack 文档与规范
 
-> 状态：Phase 0 文档与契约补齐阶段（P0 SDD 治理规范、先导 ADR 001～004 与 `declare` 契约修订中；尚未落盘源码）。
+> 状态：v0.1（Phase 0～5）全量交付完成，全部 `REQ-*` 已实现并通过 `native` / `js` / `wasm`（及纯核 `ansi`/`core` `wasm-gc`）零警告与全量测试门禁。
 >
 > 本目录是 `unmbt/clack` 的规格、设计决策与交付契约。实现尚未开始前，需求 ID、`declare` 契约与设计不变量优先于代码；每个阶段推进后必须回写需求状态与验证证据。
 
@@ -34,7 +34,7 @@
 
 ## 当前已实证基线
 
-- **工具链**：`moon 0.1.20261119`、`moonc v0.10.22`（核心整型规范化为 `Int32`）。
+- **工具链**：`moon 0.1.20261126`、`moonc v1.0.0-rc1`（核心整型规范化为 `Int32`，外部库导出使用 `pkgtype(kind: "foreign_library")` + `#export_name`，支持 `moon fix --warn-list +73` 自动清理冗余标注）。
 - **异步与 I/O**：采用标准库 `moonbitlang/core/async`（`native` + `js` + `wasm` 支持调度/队列/定时器；`core/async/stdio` 支持 `native` + `wasm` 并内置 Windows 控制台编解码；`core/async/js_async` 支持 `js` `Promise`/`ReadableStream` 互操作；不支持 `wasm-gc`）。
 - **目标后端矩阵**：
   - `ansi`、`core`：全四目标（`native`、`js`、`wasm`、`wasm-gc`）。

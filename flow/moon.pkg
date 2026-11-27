@@ -1,0 +1,15 @@
+import {
+  "unmbt/clack/core",
+  "unmbt/clack/prompts",
+  "unmbt/clack/term",
+}
+
+import {
+  "moonbitlang/core/async",
+} for "test"
+
+supported_targets = "-all+native+js+wasm"
+
+options(
+  "allow-experimental-packages": [ "moonbitlang/core/async" ],
+)

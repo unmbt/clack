@@ -1,26 +1,15 @@
-// Learn more about moon.mod configuration:
-// https://docs.moonbitlang.com/en/latest/toolchain/moon/module.html
-//
-// To add a dependency, run this command in your terminal:
-//   moon add moonbitlang/x
-//
-// Or manually declare it in `import`, for example:
-// import {
-//   "moonbitlang/x@0.4.6",
-// }
-
 name = "unmbt/clack"
 
 version = "0.1.0"
 
 readme = "README.mbt.md"
 
-repository = ""
+repository = "https://github.com/unmbt/clack"
 
 license = "MIT"
 
-keywords = []
+keywords = [ "cli", "clack", "prompt", "wizard", "terminal", "ansi" ]
 
-preferred_target = "wasm"
+preferred_target = "native"
 
-description = ""
+description = "Zero-dependency streaming CLI prompts, wizard flows, spinners, and SGR styling with dual Clack & Minimal themes for MoonBit"

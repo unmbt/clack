@@ -1,0 +1,36 @@
+import {
+  "moonbitlang/core/async/aqueue",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/env",
+}
+
+#cfg(any(target="native", target="wasm"))
+import {
+  "moonbitlang/core/async/stdio",
+}
+
+#cfg(target="wasm")
+import {
+  "moonbitlang/core/async",
+}
+
+import {
+  "moonbitlang/core/async",
+  "unmbt/clack/core",
+} for "test"
+
+supported_targets = "-all+native+js+wasm"
+
+options(
+  "allow-experimental-packages": [
+    "moonbitlang/core/async",
+    "moonbitlang/core/async/aqueue",
+    "moonbitlang/core/async/stdio",
+  ],
+  "native-stub": [ "native_stub.c" ],
+  targets: {
+    "term_native.mbt": [ "native" ],
+    "term_js.mbt": [ "js" ],
+    "term_wasm.mbt": [ "wasm" ],
+  },
+)

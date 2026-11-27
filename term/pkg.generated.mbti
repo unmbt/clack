@@ -1,0 +1,82 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "unmbt/clack/term"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn default_terminal() -> &Terminal
+
+// Errors
+#derive(Eq, @debug.Debug)
+pub(all) suberror TermError {
+  IoFailure(String)
+  NotInteractive(String)
+  EndOfInput
+}
+
+// Types and methods
+pub struct CallbackTerminal {
+  // private fields
+}
+pub fn CallbackTerminal::CallbackTerminal(on_write~ : (StringView) -> Unit, cols? : Int32, rows? : Int32, tty? : Bool, env? : Map[String, String]) -> Self
+pub fn CallbackTerminal::close(Self) -> Unit
+pub async fn CallbackTerminal::enter_raw_mode(Self) -> Unit raise TermError
+pub fn CallbackTerminal::env_get(Self, String) -> String?
+pub fn CallbackTerminal::in_raw_mode(Self) -> Bool
+pub fn CallbackTerminal::is_tty(Self) -> Bool
+pub async fn CallbackTerminal::leave_raw_mode(Self) -> Unit nocancel
+pub fn CallbackTerminal::push_input(Self, Bytes) -> Unit
+pub fn CallbackTerminal::push_text(Self, StringView) -> Unit
+pub async fn CallbackTerminal::read_bytes(Self) -> Bytes? raise TermError
+pub fn CallbackTerminal::set_size(Self, Int32, Int32) -> Unit
+pub fn CallbackTerminal::size(Self) -> (Int32, Int32)
+pub async fn CallbackTerminal::write_final(Self, StringView) -> Unit nocancel
+pub async fn CallbackTerminal::write_str(Self, StringView) -> Unit raise TermError
+pub impl Terminal for CallbackTerminal
+
+pub struct NativeTerminal {
+  // private fields
+}
+pub fn NativeTerminal::NativeTerminal() -> Self
+pub impl Terminal for NativeTerminal
+
+#derive(Eq, @debug.Debug)
+pub(all) enum NonInteractivePolicy {
+  UseDefaults
+  Fail
+}
+
+pub struct VirtualTerminal {
+  // private fields
+}
+pub fn VirtualTerminal::VirtualTerminal(Array[Bytes], cols? : Int32, rows? : Int32, tty? : Bool, env? : Map[String, String]) -> Self
+pub fn VirtualTerminal::all_output(Self) -> String
+pub async fn VirtualTerminal::enter_raw_mode(Self) -> Unit raise TermError
+pub fn VirtualTerminal::env_get(Self, String) -> String?
+pub fn VirtualTerminal::frames(Self) -> Array[String]
+pub fn VirtualTerminal::in_raw_mode(Self) -> Bool
+pub fn VirtualTerminal::is_tty(Self) -> Bool
+pub async fn VirtualTerminal::leave_raw_mode(Self) -> Unit nocancel
+pub async fn VirtualTerminal::read_bytes(Self) -> Bytes? raise TermError
+pub fn VirtualTerminal::set_size(Self, Int32, Int32) -> Unit
+pub fn VirtualTerminal::set_tty(Self, Bool) -> Unit
+pub fn VirtualTerminal::size(Self) -> (Int32, Int32)
+pub async fn VirtualTerminal::write_final(Self, StringView) -> Unit nocancel
+pub async fn VirtualTerminal::write_str(Self, StringView) -> Unit raise TermError
+pub impl Terminal for VirtualTerminal
+
+// Type aliases
+
+// Traits
+pub(open) trait Terminal {
+  fn is_tty(Self) -> Bool
+  fn size(Self) -> (Int32, Int32)
+  fn env_get(Self, String) -> String?
+  async fn enter_raw_mode(Self) -> Unit raise TermError
+  async fn leave_raw_mode(Self) -> Unit nocancel
+  async fn read_bytes(Self) -> Bytes? raise TermError
+  async fn write_str(Self, StringView) -> Unit raise TermError
+  async fn write_final(Self, StringView) -> Unit nocancel
+}

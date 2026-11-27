@@ -1,0 +1,25 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "unmbt/clack/flow"
+
+import {
+  "unmbt/clack/core",
+  "unmbt/clack/prompts",
+  "unmbt/clack/term",
+}
+
+// Values
+pub async fn[State] run_wizard(State, Array[Step[State]], session? : @prompts.Session) -> @core.PromptOutcome[State] raise @term.TermError
+
+// Errors
+
+// Types and methods
+pub struct Step[State] {
+  id : String
+  when : (State) -> Bool
+  run : async (State, @prompts.Session, Bool) -> @core.PromptOutcome[State] raise @term.TermError
+}
+pub fn[State] Step::Step(String, when? : (State) -> Bool, async (State, @prompts.Session, Bool) -> @core.PromptOutcome[State] raise @term.TermError) -> Self[State]
+
+// Type aliases
+
+// Traits

@@ -1,0 +1,22 @@
+import {
+  "moonbitlang/core/async",
+  "moonbitlang/core/env",
+  "unmbt/clack/ansi",
+  "unmbt/clack/core",
+  "unmbt/clack/term",
+}
+
+#cfg(any(target="native", target="wasm"))
+import {
+  "moonbitlang/core/async/fs",
+}
+
+supported_targets = "-all+native+js+wasm"
+
+options(
+  "allow-experimental-packages": [
+    "moonbitlang/core/async",
+    "moonbitlang/core/async/fs",
+  ],
+  targets: { "path_fs.mbt": [ "native", "wasm" ], "path_js.mbt": [ "js" ] },
+)

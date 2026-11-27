@@ -1,7 +1,7 @@
 # unmbt/clack 智能体工程总纲（AGENTS.md）
 
 > **模块标识**：`unmbt/clack`（隶属 [UnMoonBit (@unmbt)](https://github.com/unmbt) 工具家族）  
-> **目标编译器与工具链**：[MoonBit v0.10.22+](https://www.moonbitlang.com/updates/)（`moon 0.1.20261119+`）  
+> **目标编译器与工具链**：[MoonBit v1.0.0-rc1+](https://www.moonbitlang.com/updates/)（`moon 0.1.20261126+`）  
 > **许可协议**：MIT  
 > **目标编译后端**：`native`（主力一等公民）、`js`（Node.js / Deno / Bun CLI 与浏览器 `xterm.js` Demo）、`wasm`（基础与浏览器核心兼容）；纯状态机内核 `ansi` 与 `core` 额外兼容 `wasm-gc`  
 > **文档用途**：面向 AI 编码智能体（SeekMoon / Claude Code / Codex）的顶层协作入口与语法红线。智能体在修改任何代码前，必须先阅读本总纲与 [`docs/README.md`](./docs/README.md)，再按需加载 [`docs/spec/`](./docs/spec/) 与 [`docs/decisions/`](./docs/decisions/) 下的专项规格文档。
@@ -27,7 +27,7 @@ AI 智能体在编写任何 `.mbt`、`moon.mod`、`moon.pkg` 文件前，必须�
 
 | 规范维度 | 强制正确写法（v0.10.22+） | 严禁出现的废弃/非法写法 |
 | :--- | :--- | :--- |
-| **清单文件格式** | 仅使用新版 DSL：`moon.mod` 与 `moon.pkg`（顶层字段用下划线如 `preferred_target`、`supported_targets`）；可执行入口声明 `pkgtype(kind: "executable")`；条件导入使用 `#cfg(...)` | 严禁创建 `moon.mod.json` 或 `moon.pkg.json`；严禁使用 `is-main: true` |
+| **清单文件格式** | 仅使用新版 DSL：`moon.mod` 与 `moon.pkg`（顶层字段用下划线如 `preferred_target`、`supported_targets`）；可执行入口声明 `pkgtype(kind: "executable")`；导出外部库函数使用 `pkgtype(kind: "foreign_library")` + `#export_name("...")`；条件导入使用 `#cfg(...)` | 严禁创建 `moon.mod.json` 或 `moon.pkg.json`；严禁使用 `is-main: true` 或已废弃的 `link.js.exports` |
 | **异步运行时依赖** | 统一使用标准库 `moonbitlang/core/async` 及其子包（对齐 `unmbt/moonset` ADR-003），在 `moon.pkg` 显式配置 `"allow-experimental-packages": [...]` | 严禁在 `moon.mod` 引入外部 `moonbitlang/async` 依赖；严禁在纯内核 `ansi`/`core` 导入任何 `core/async*` |
 | **整型与基础类型** | 公开契约与长度/索引/坐标统一使用 `Int32`（配合 `moon fmt` 自动规范化）；`StringBuilder` 使用 `write_string` / `write_view` / `write_char` | 避免与 `Int` 混用引发工具链归一化 diff 抖动 |
 | **Trait 与组件抽象** | `trait` 与 `impl` 内方法必须带 `fn` 关键字；需点号调用时显式声明 `pub extend Type with Trait::{m}`；多输出组件统一经 `PromptAdapter[T]` 适配器抽象 | **严禁在 `trait` 中声明关联类型**（如 `type Output` / `Self::Output`，MoonBit 不支持）；严禁省略 `fn` 关键字 |

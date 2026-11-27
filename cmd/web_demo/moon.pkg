@@ -1,0 +1,22 @@
+import {
+  "moonbitlang/core/async",
+  "unmbt/clack",
+}
+
+#cfg(target="js")
+import {
+  "moonbitlang/core/async/js_async",
+}
+
+supported_targets = "-all+js+wasm"
+
+pkgtype(kind: "foreign_library")
+
+options(
+  "allow-experimental-packages": [
+    "moonbitlang/core/async",
+    "moonbitlang/core/async/js_async",
+  ],
+  link: { "js": { "format": "esm" } },
+  targets: { "demo_js.mbt": [ "js" ] },
+)

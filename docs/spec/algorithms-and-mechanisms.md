@@ -1,24 +1,27 @@
 # 核心算法、双主题渲染与跨平台终端机制
 
-## 1. 双主题视觉规范对照
+## 1. 双主题视觉规范对照（1:1 对齐原版 `@clack/prompts`）
 
-所有边框与状态指示字符在检测到 Windows 旧版非 UTF-8 代码页或显式配置 `unicode = false` 时，自动回退为纯 ASCII 符号（`|`、`+`、`*`、`o`、`>`）：
+所有边框与状态指示字符在检测到 Windows 旧版非 UTF-8 代码页或显式配置 `unicode = false` 时，自动回退为原版 Clack ASCII 符号（`┌`→`T`、`│`→`|`、`└`→`—`、`◆`→`*`、`◇`→`o`、`■`/`▲`→`x`、`●`→`>`、`○`→` `、`◼`→`[+]`、`◻`→`[ ]`/`[•]`、`▪`→`•`）：
 
 ```text
-[ClackTheme 导轨风渲染示意]               [MinimalTheme 极简风渲染示意]
-┌  create-moon-app                        ? Project name › my-app
-│                                         ✔ Project name · my-app
-◇  Project name                           ? Pick target backend › (Use arrows, Esc to go back)
-│  my-app                                 ❯ Native (C / Native backend)
-│                                           WebAssembly (Wasm / moonx)
-◆  Pick target backend                      JavaScript (Node / Deno)
-│  ● Native · 极速单文件二进制
+[ClackTheme 1:1 导轨风渲染示意]             [MinimalTheme 极简风渲染示意]
+┌  create-moon-app                          ? Project name › my-app
+│                                           ✔ Project name · my-app
+◇  Project name                             ? Pick target backend › (Use arrows)
+│  my-app                                   ❯ Native (极速单文件二进制)
+│                                             WebAssembly
+◆  Pick target backend                        JavaScript
+│  ● Native (极速单文件二进制)
 │  ○ WebAssembly
 │  ○ JavaScript
+│  ↑/↓ to navigate • Enter: confirm
 └
 ```
 
-* **`GroupMultiSelect`（分组多选）导轨树形视觉规范**：参考 `moonset/cli/tui_render.mbt`，在分组标题下以 `│ ` 与 `└ ` 呈现所属子项；在分组标题按 `Space` 可整组切换勾选/取消，单条目使用 `◼` / `◻`（ASCII 回退为 `[x]` / `[ ]`）。
+* **1:1 导轨衔接规则**：`intro(title)` 仅输出 `┌  {title}`；每个提示组件、`note`、`log`、`spinner`、`outro` 在 `with_guide = true` 时自带前导 `gray(│)`；`submit` 态不追加多余尾随 `│`，`cancel` 态在存在值时渲染删除线 `strikethrough(dim(value))` 并补 `gray(│)` 衔接后续 `cancel(msg)`（`└  red(msg)`）。
+* **光标与占位符**：空 `text` 有 `placeholder` 时渲染 `inverse(首字符) + dim(其余)`，无 `placeholder` 时渲染反色隐藏光标；输入末尾渲染 `█`（密码用反色隐藏光标），中间字符渲染 `inverse(char)`；默认密码掩码为 `▪`（ASCII 回退 `•`）。
+* **`GroupMultiSelect`（分组多选）导轨树形视觉规范**：在分组标题下以 `│ ` 与 `└ ` 呈现所属子项（`selectable_groups = false` 时以双空格缩进）；在分组标题按 `Space` 可整组切换勾选/取消，子项高亮联动组激活态。
 * **`PromptPhase::Reverted`（回退态）视觉表现**：当用户在步骤 $k$ 按下 `Esc` 或 `Shift+Tab` 触发 `StepBack` 时，渲染器将当前活动帧固化为单行暗淡撤回标记（如 Clack 导轨 `│` 保持衔接不留残影，或标记 `◁ Reverted`），随后无缝激活上一步组件并预填其历史输入值。
 
 ## 2. 行内差分重绘算法（`InlineDiffRenderer`）与宽字符规则

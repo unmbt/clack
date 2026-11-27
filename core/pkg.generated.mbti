@@ -1,0 +1,363 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "unmbt/clack/core"
+
+import {
+  "moonbitlang/core/debug",
+  "unmbt/clack/ansi",
+}
+
+// Values
+pub fn days_in_month(Int32, Int32) -> Int32
+
+pub fn limit_options(Array[String], Int32, Int32, Int32, max_items? : Int32, column_padding? : Int32, row_padding? : Int32, ellipsis? : String) -> Array[String]
+
+pub fn render_box(StringView, title? : StringView, cols? : Int32, styler? : @ansi.Styler, unicode? : Bool, with_guide? : Bool, content_align? : BoxAlign, title_align? : BoxAlign, width? : BoxWidth, title_padding? : Int32, content_padding? : Int32, rounded? : Bool, format_border? : (String) -> String) -> String
+
+// Errors
+
+// Types and methods
+pub struct AutocompleteModel[T] {
+  // private fields
+}
+pub fn[T] AutocompleteModel::AutocompleteModel(String, Array[SelectOption[T]], placeholder? : String, initial_user_input? : String, max_items? : Int32, complete_on_tab? : Bool, filter? : (String, SelectOption[T]) -> Bool, options_fn? : (String) -> Array[SelectOption[T]], validate? : (T) -> String?, with_guide? : Bool) -> Self[T]
+pub fn[T] AutocompleteModel::as_adapter(Self[T]) -> PromptAdapter[T]
+pub fn[T] AutocompleteModel::filtered_count(Self[T]) -> Int32
+pub fn[T] AutocompleteModel::focused_index(Self[T]) -> Int32?
+pub fn[T] AutocompleteModel::on_key(Self[T], KeyEvent, allow_back? : Bool) -> PromptOutcome[T]?
+pub fn[T] AutocompleteModel::query(Self[T]) -> String
+pub fn[T] AutocompleteModel::set_options(Self[T], Array[SelectOption[T]]) -> Unit
+pub fn[T] AutocompleteModel::set_phase(Self[T], PromptPhase) -> Unit
+pub fn[T] AutocompleteModel::view(Self[T]) -> FrameSpec
+
+pub struct AutocompleteMultiSelectModel[T] {
+  // private fields
+}
+pub fn[T] AutocompleteMultiSelectModel::AutocompleteMultiSelectModel(String, Array[SelectOption[T]], initial_indices? : Array[Int32], placeholder? : String, required? : Bool, max_items? : Int32, filter? : (String, SelectOption[T]) -> Bool, validate? : (Array[T]) -> String?, with_guide? : Bool) -> Self[T]
+pub fn[T] AutocompleteMultiSelectModel::as_adapter(Self[T]) -> PromptAdapter[Array[T]]
+pub fn[T] AutocompleteMultiSelectModel::on_key(Self[T], KeyEvent, allow_back? : Bool) -> PromptOutcome[Array[T]]?
+pub fn[T] AutocompleteMultiSelectModel::query(Self[T]) -> String
+pub fn[T] AutocompleteMultiSelectModel::selected_indices(Self[T]) -> Array[Int32]
+pub fn[T] AutocompleteMultiSelectModel::view(Self[T]) -> FrameSpec
+
+#derive(Eq, @debug.Debug)
+pub(all) enum BodyView {
+  TextInput(rendered_value~ : String, cursor_pos~ : Int32, placeholder~ : String?, is_empty~ : Bool, is_password~ : Bool, raw_text~ : String)
+  ConfirmToggle(active_yes~ : Bool, yes_label~ : String, no_label~ : String, vertical~ : Bool)
+  OptionList(items~ : Array[OptionRowView], cursor~ : Int32, max_items~ : Int32?, total_count~ : Int32, total_unfiltered~ : Int32, filter_query~ : String?, filter_cursor~ : Int32, filter_placeholder~ : String?, is_navigating~ : Bool, complete_on_tab~ : Bool, show_instructions~ : Bool, is_multi~ : Bool)
+  GroupOptionList(rows~ : Array[GroupRowView], cursor~ : Int32, max_items~ : Int32?, total_count~ : Int32, selectable_groups~ : Bool, group_spacing~ : Int32, show_instructions~ : Bool)
+  SelectKeyList(items~ : Array[SelectKeyRowView])
+  MultiLineInput(lines~ : Array[String], cursor_line~ : Int32, cursor_col~ : Int32, placeholder~ : String?, is_empty~ : Bool, show_submit~ : Bool, submit_focused~ : Bool)
+  DateInput(segments~ : Array[DateSegmentView], separator~ : String, inline_error~ : String?)
+}
+
+#derive(Eq, @debug.Debug)
+pub(all) enum BoxAlign {
+  Left
+  Center
+  Right
+}
+
+#derive(Eq, @debug.Debug)
+pub(all) enum BoxWidth {
+  Auto
+  Ratio(Double)
+}
+
+pub struct ClackTheme {
+  unicode : Bool
+  with_guide : Bool
+}
+pub fn ClackTheme::ClackTheme(unicode? : Bool, with_guide? : Bool) -> Self
+pub fn ClackTheme::render_cancel(Self, StringView, @ansi.Styler) -> String
+pub fn ClackTheme::render_frame(Self, FrameSpec, @ansi.Styler, Int32) -> Array[String]
+pub fn ClackTheme::render_intro(Self, StringView, @ansi.Styler) -> String
+pub fn ClackTheme::render_log(Self, StringView, StringView, @ansi.Styler) -> String
+pub fn ClackTheme::render_note(Self, StringView, StringView, @ansi.Styler) -> String
+pub fn ClackTheme::render_note_formatted(Self, StringView, StringView, @ansi.Styler, cols? : Int32, format? : (String) -> String) -> String
+pub fn ClackTheme::render_outro(Self, StringView, @ansi.Styler) -> String
+pub impl Theme for ClackTheme
+
+pub struct ConfirmModel {
+  // private fields
+}
+pub fn ConfirmModel::ConfirmModel(String, initial_value? : Bool, active_label? : String, inactive_label? : String, vertical? : Bool, with_guide? : Bool) -> Self
+pub fn ConfirmModel::as_adapter(Self) -> PromptAdapter[Bool]
+pub fn ConfirmModel::on_key(Self, KeyEvent, allow_back? : Bool) -> PromptOutcome[Bool]?
+pub fn ConfirmModel::value(Self) -> Bool
+pub fn ConfirmModel::view(Self) -> FrameSpec
+
+#derive(Eq, @debug.Debug)
+pub(all) enum DateFormat {
+  Ymd
+  Mdy
+  Dmy
+}
+
+pub struct DateModel {
+  // private fields
+}
+pub fn DateModel::DateModel(String, format? : DateFormat, separator? : String, initial_value? : SimpleDate, default_value? : SimpleDate, min_date? : SimpleDate, max_date? : SimpleDate, validate? : (SimpleDate) -> String?, with_guide? : Bool) -> Self
+pub fn DateModel::as_adapter(Self) -> PromptAdapter[SimpleDate]
+pub fn DateModel::formatted_value(Self) -> String
+pub fn DateModel::on_key(Self, KeyEvent, allow_back? : Bool) -> PromptOutcome[SimpleDate]?
+pub fn DateModel::view(Self) -> FrameSpec
+
+#derive(Eq, @debug.Debug)
+pub(all) struct DateSegmentView {
+  text : String
+  label : String
+  is_active : Bool
+}
+
+#derive(Eq, @debug.Debug)
+pub(all) struct FrameSpec {
+  phase : PromptPhase
+  message : String
+  body : BodyView
+  submitted_summary : String?
+  with_guide : Bool
+  max_rows : Int32?
+}
+
+pub struct GroupMultiSelectModel[T] {
+  // private fields
+}
+pub fn[T] GroupMultiSelectModel::GroupMultiSelectModel(String, Array[GroupOption[T]], initial_indices? : Array[Int32], required? : Bool, max_items? : Int32, selectable_groups? : Bool, group_spacing? : Int32, show_instructions? : Bool, with_guide? : Bool) -> Self[T]
+pub fn[T] GroupMultiSelectModel::as_adapter(Self[T]) -> PromptAdapter[Array[T]]
+pub fn[T] GroupMultiSelectModel::cursor(Self[T]) -> Int32
+pub fn[T : Eq] GroupMultiSelectModel::from_initial_values(String, Array[GroupOption[T]], initial_values? : Array[T], required? : Bool, max_items? : Int32, selectable_groups? : Bool, group_spacing? : Int32, show_instructions? : Bool, with_guide? : Bool) -> Self[T]
+pub fn[T] GroupMultiSelectModel::on_key(Self[T], KeyEvent, allow_back? : Bool) -> PromptOutcome[Array[T]]?
+pub fn[T] GroupMultiSelectModel::selected_indices(Self[T]) -> Array[Int32]
+pub fn[T] GroupMultiSelectModel::view(Self[T]) -> FrameSpec
+
+#derive(Eq, @debug.Debug)
+pub(all) struct GroupOption[T] {
+  group : String
+  options : Array[SelectOption[T]]
+}
+pub fn[T] GroupOption::GroupOption(String, Array[SelectOption[T]]) -> Self[T]
+
+#derive(Eq, @debug.Debug)
+pub(all) enum GroupRowView {
+  Header(label~ : String, is_cursor~ : Bool, all_selected~ : Bool, partial_selected~ : Bool, group_active~ : Bool, selectable~ : Bool)
+  Item(row~ : OptionRowView, is_last_in_group~ : Bool, in_active_group~ : Bool, selectable_groups~ : Bool)
+}
+
+pub struct InlineDiffRenderer {
+  // private fields
+}
+pub fn InlineDiffRenderer::InlineDiffRenderer() -> Self
+pub fn InlineDiffRenderer::commit(Self, Array[String], Int32, sync_output~ : Bool) -> String
+pub fn InlineDiffRenderer::on_resize(Self) -> String
+pub fn InlineDiffRenderer::patch(Self, Array[String], Int32, sync_output~ : Bool) -> String
+pub fn InlineDiffRenderer::reset(Self) -> Unit
+
+pub struct InlineDriver[T] {
+  // private fields
+}
+pub fn[T] InlineDriver::InlineDriver(PromptAdapter[T], theme? : &Theme, styler? : @ansi.Styler, cols? : Int32, rows? : Int32, allow_back? : Bool, sync_output? : Bool) -> Self[T]
+pub fn[T] InlineDriver::feed(Self[T], BytesView) -> (String, PromptOutcome[T]?)
+pub fn[T] InlineDriver::flush_escape(Self[T]) -> (String, PromptOutcome[T]?)
+pub fn[T] InlineDriver::has_pending_escape(Self[T]) -> Bool
+pub fn[T] InlineDriver::resize(Self[T], Int32, Int32) -> String
+pub fn[T] InlineDriver::start(Self[T]) -> String
+
+#derive(Eq, Hash, @debug.Debug)
+pub(all) enum KeyCode {
+  Char(Char)
+  Paste(String)
+  Enter
+  Escape
+  Backspace
+  Delete
+  Tab
+  BackTab
+  Up
+  Down
+  Left
+  Right
+  Home
+  End
+  PageUp
+  PageDown
+  Space
+}
+
+pub struct KeyDecoder {
+  // private fields
+}
+pub fn KeyDecoder::KeyDecoder() -> Self
+pub fn KeyDecoder::feed(Self, BytesView) -> Array[KeyEvent]
+pub fn KeyDecoder::flush_escape(Self) -> KeyEvent?
+pub fn KeyDecoder::has_pending_escape(Self) -> Bool
+
+#derive(Eq, Hash, @debug.Debug)
+pub(all) struct KeyEvent {
+  code : KeyCode
+  ctrl : Bool
+  alt : Bool
+  shift : Bool
+}
+
+pub struct MinimalTheme {
+  unicode : Bool
+}
+pub fn MinimalTheme::MinimalTheme(unicode? : Bool) -> Self
+pub fn MinimalTheme::render_cancel(Self, StringView, @ansi.Styler) -> String
+pub fn MinimalTheme::render_frame(Self, FrameSpec, @ansi.Styler, Int32) -> Array[String]
+pub fn MinimalTheme::render_intro(Self, StringView, @ansi.Styler) -> String
+pub fn MinimalTheme::render_log(Self, StringView, StringView, @ansi.Styler) -> String
+pub fn MinimalTheme::render_note(Self, StringView, StringView, @ansi.Styler) -> String
+pub fn MinimalTheme::render_outro(Self, StringView, @ansi.Styler) -> String
+pub impl Theme for MinimalTheme
+
+pub struct MultiLineModel {
+  // private fields
+}
+pub fn MultiLineModel::MultiLineModel(String, placeholder? : String, default_value? : String, initial_value? : String, show_submit? : Bool, validate? : (String) -> String?, with_guide? : Bool) -> Self
+pub fn MultiLineModel::as_adapter(Self) -> PromptAdapter[String]
+pub fn MultiLineModel::on_key(Self, KeyEvent, allow_back? : Bool) -> PromptOutcome[String]?
+pub fn MultiLineModel::set_phase(Self, PromptPhase) -> Unit
+pub fn MultiLineModel::value(Self) -> String
+pub fn MultiLineModel::view(Self) -> FrameSpec
+
+pub struct MultiSelectModel[T] {
+  // private fields
+}
+pub fn[T] MultiSelectModel::MultiSelectModel(String, Array[SelectOption[T]], initial_indices? : Array[Int32], required? : Bool, max_items? : Int32, show_instructions? : Bool, with_guide? : Bool) -> Self[T]
+pub fn[T] MultiSelectModel::as_adapter(Self[T]) -> PromptAdapter[Array[T]]
+pub fn[T] MultiSelectModel::cursor(Self[T]) -> Int32
+pub fn[T] MultiSelectModel::on_key(Self[T], KeyEvent, allow_back? : Bool) -> PromptOutcome[Array[T]]?
+pub fn[T] MultiSelectModel::selected_indices(Self[T]) -> Array[Int32]
+pub fn[T] MultiSelectModel::view(Self[T]) -> FrameSpec
+
+#derive(Eq, @debug.Debug)
+pub(all) struct OptionRowView {
+  label : String
+  hint : String?
+  is_cursor : Bool
+  is_selected : Bool
+  is_disabled : Bool
+  is_multi : Bool
+}
+
+pub struct PasswordModel {
+  // private fields
+}
+pub fn PasswordModel::PasswordModel(String, mask? : Char?, clear_on_error? : Bool, validate? : (String) -> String?, with_guide? : Bool) -> Self
+pub fn PasswordModel::as_adapter(Self) -> PromptAdapter[String]
+pub fn PasswordModel::masked(Self) -> String
+pub fn PasswordModel::on_key(Self, KeyEvent, allow_back? : Bool) -> PromptOutcome[String]?
+pub fn PasswordModel::set_phase(Self, PromptPhase) -> Unit
+pub fn PasswordModel::value(Self) -> String
+pub fn PasswordModel::view(Self) -> FrameSpec
+
+pub struct PromptAdapter[T] {
+  on_key : (KeyEvent, Bool) -> PromptOutcome[T]?
+  view : () -> FrameSpec
+}
+pub fn[T] PromptAdapter::PromptAdapter(on_key~ : (KeyEvent, Bool) -> PromptOutcome[T]?, view~ : () -> FrameSpec) -> Self[T]
+
+#derive(Eq, @debug.Debug)
+pub(all) enum PromptOutcome[T] {
+  Submitted(T)
+  Cancelled
+  StepBack
+}
+pub fn[T] PromptOutcome::is_cancelled(Self[T]) -> Bool
+pub fn[T] PromptOutcome::is_step_back(Self[T]) -> Bool
+pub fn[T] PromptOutcome::is_submitted(Self[T]) -> Bool
+pub fn[T] PromptOutcome::to_option(Self[T]) -> T?
+pub fn[T] PromptOutcome::unwrap_or(Self[T], T) -> T
+
+#derive(Eq, @debug.Debug)
+pub(all) enum PromptPhase {
+  Initial
+  Active
+  Validating
+  Warning(String)
+  Error(String)
+  Submitted
+  Cancelled
+  Reverted
+}
+
+pub struct SelectKeyModel[T] {
+  // private fields
+}
+pub fn[T] SelectKeyModel::SelectKeyModel(String, Array[SelectKeyOption[T]], initial_index? : Int32, case_sensitive? : Bool, with_guide? : Bool) -> Self[T]
+pub fn[T] SelectKeyModel::as_adapter(Self[T]) -> PromptAdapter[T]
+pub fn[T] SelectKeyModel::cursor(Self[T]) -> Int32
+pub fn[T] SelectKeyModel::on_key(Self[T], KeyEvent, allow_back? : Bool) -> PromptOutcome[T]?
+pub fn[T] SelectKeyModel::view(Self[T]) -> FrameSpec
+
+#derive(Eq, @debug.Debug)
+pub(all) struct SelectKeyOption[T] {
+  key : String
+  value : T
+  label : String
+  hint : String?
+  disabled : Bool
+}
+pub fn[T] SelectKeyOption::SelectKeyOption(String, T, String, hint? : String, disabled? : Bool) -> Self[T]
+
+#derive(Eq, @debug.Debug)
+pub(all) struct SelectKeyRowView {
+  key : String
+  label : String
+  hint : String?
+  is_cursor : Bool
+  is_disabled : Bool
+}
+
+pub struct SelectModel[T] {
+  // private fields
+}
+pub fn[T] SelectModel::SelectModel(String, Array[SelectOption[T]], initial_index? : Int32, max_items? : Int32, show_instructions? : Bool, with_guide? : Bool) -> Self[T]
+pub fn[T] SelectModel::as_adapter(Self[T]) -> PromptAdapter[T]
+pub fn[T] SelectModel::cursor(Self[T]) -> Int32
+pub fn[T] SelectModel::has_selectable_options(Self[T]) -> Bool
+pub fn[T] SelectModel::on_key(Self[T], KeyEvent, allow_back? : Bool) -> PromptOutcome[T]?
+pub fn[T] SelectModel::view(Self[T]) -> FrameSpec
+
+#derive(Eq, @debug.Debug)
+pub(all) struct SelectOption[T] {
+  value : T
+  label : String
+  hint : String?
+  disabled : Bool
+}
+pub fn[T] SelectOption::SelectOption(T, String, hint? : String, disabled? : Bool) -> Self[T]
+
+#derive(Eq, @debug.Debug)
+pub(all) struct SimpleDate {
+  year : Int32
+  month : Int32
+  day : Int32
+}
+pub fn SimpleDate::SimpleDate(Int32, Int32, Int32) -> Self
+pub fn SimpleDate::compare(Self, Self) -> Int32
+pub fn SimpleDate::to_iso_string(Self) -> String
+
+pub struct TextModel {
+  // private fields
+}
+pub fn TextModel::TextModel(String, placeholder? : String, default_value? : String, initial_value? : String, validate? : (String) -> String?, with_guide? : Bool) -> Self
+pub fn TextModel::as_adapter(Self) -> PromptAdapter[String]
+pub fn TextModel::cursor(Self) -> Int32
+pub fn TextModel::on_key(Self, KeyEvent, allow_back? : Bool) -> PromptOutcome[String]?
+pub fn TextModel::set_phase(Self, PromptPhase) -> Unit
+pub fn TextModel::value(Self) -> String
+pub fn TextModel::view(Self) -> FrameSpec
+
+// Type aliases
+
+// Traits
+pub(open) trait Theme {
+  fn render_frame(Self, FrameSpec, @ansi.Styler, Int32) -> Array[String]
+  fn render_intro(Self, StringView, @ansi.Styler) -> String
+  fn render_outro(Self, StringView, @ansi.Styler) -> String
+  fn render_cancel(Self, StringView, @ansi.Styler) -> String
+  fn render_note(Self, StringView, StringView, @ansi.Styler) -> String
+  fn render_log(Self, StringView, StringView, @ansi.Styler) -> String
+}

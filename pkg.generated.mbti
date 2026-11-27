@@ -1,0 +1,150 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "unmbt/clack"
+
+import {
+  "unmbt/clack/ansi",
+  "unmbt/clack/core",
+  "unmbt/clack/flow",
+  "unmbt/clack/prompts",
+  "unmbt/clack/term",
+}
+
+// Values
+pub async fn[T] autocomplete(String, Array[@core.SelectOption[T]], placeholder? : String, initial_user_input? : String, max_items? : Int32, complete_on_tab? : Bool, filter? : (String, @core.SelectOption[T]) -> Bool, options_fn? : (String) -> Array[@core.SelectOption[T]], validate? : (T) -> String?, validate_async? : async (T) -> String?, allow_back? : Bool, session? : @prompts.Session) -> @core.PromptOutcome[T] raise @term.TermError
+
+pub async fn[T] autocomplete_multiselect(String, Array[@core.SelectOption[T]], initial_indices? : Array[Int32], placeholder? : String, required? : Bool, max_items? : Int32, filter? : (String, @core.SelectOption[T]) -> Bool, validate? : (Array[T]) -> String?, allow_back? : Bool, session? : @prompts.Session) -> @core.PromptOutcome[Array[T]] raise @term.TermError
+
+pub async fn box(StringView, title? : StringView, content_align? : @core.BoxAlign, title_align? : @core.BoxAlign, width? : @core.BoxWidth, title_padding? : Int32, content_padding? : Int32, rounded? : Bool, format_border? : (String) -> String, session? : @prompts.Session) -> Unit raise @term.TermError
+
+pub async fn cancel(message? : StringView, session? : @prompts.Session) -> Unit raise @term.TermError
+
+pub async fn confirm(String, initial_value? : Bool, active_label? : String, inactive_label? : String, vertical? : Bool, allow_back? : Bool, session? : @prompts.Session) -> @core.PromptOutcome[Bool] raise @term.TermError
+
+pub async fn date(String, format? : @core.DateFormat, separator? : String, initial_value? : @core.SimpleDate, default_value? : @core.SimpleDate, min_date? : @core.SimpleDate, max_date? : @core.SimpleDate, validate? : (@core.SimpleDate) -> String?, allow_back? : Bool, session? : @prompts.Session) -> @core.PromptOutcome[@core.SimpleDate] raise @term.TermError
+
+pub async fn[T : Eq] group_multiselect(String, Array[@core.GroupOption[T]], initial_values? : Array[T], required? : Bool, max_items? : Int32, selectable_groups? : Bool, group_spacing? : Int32, show_instructions? : Bool, allow_back? : Bool, session? : @prompts.Session) -> @core.PromptOutcome[Array[T]] raise @term.TermError
+
+pub async fn intro(StringView, session? : @prompts.Session) -> Unit raise @term.TermError
+
+pub async fn log_error(StringView, spacing? : Int32, secondary_symbol? : StringView, session? : @prompts.Session) -> Unit raise @term.TermError
+
+pub async fn log_info(StringView, spacing? : Int32, secondary_symbol? : StringView, session? : @prompts.Session) -> Unit raise @term.TermError
+
+pub async fn log_message(StringView, symbol? : StringView, spacing? : Int32, secondary_symbol? : StringView, session? : @prompts.Session) -> Unit raise @term.TermError
+
+pub async fn log_step(StringView, spacing? : Int32, secondary_symbol? : StringView, session? : @prompts.Session) -> Unit raise @term.TermError
+
+pub async fn log_success(StringView, spacing? : Int32, secondary_symbol? : StringView, session? : @prompts.Session) -> Unit raise @term.TermError
+
+pub async fn log_warn(StringView, spacing? : Int32, secondary_symbol? : StringView, session? : @prompts.Session) -> Unit raise @term.TermError
+
+pub async fn log_warning(StringView, spacing? : Int32, secondary_symbol? : StringView, session? : @prompts.Session) -> Unit raise @term.TermError
+
+pub async fn multiline(String, placeholder? : String, default_value? : String, initial_value? : String, show_submit? : Bool, validate? : (String) -> String?, validate_async? : async (String) -> String?, allow_back? : Bool, session? : @prompts.Session) -> @core.PromptOutcome[String] raise @term.TermError
+
+pub async fn[T] multiselect(String, Array[@core.SelectOption[T]], initial_indices? : Array[Int32], required? : Bool, max_items? : Int32, show_instructions? : Bool, allow_back? : Bool, session? : @prompts.Session) -> @core.PromptOutcome[Array[T]] raise @term.TermError
+
+pub async fn note(StringView, StringView, format? : (String) -> String, session? : @prompts.Session) -> Unit raise @term.TermError
+
+pub async fn outro(StringView, session? : @prompts.Session) -> Unit raise @term.TermError
+
+pub async fn password(String, mask? : Char?, clear_on_error? : Bool, validate? : (String) -> String?, validate_async? : async (String) -> String?, allow_back? : Bool, session? : @prompts.Session) -> @core.PromptOutcome[String] raise @term.TermError
+
+pub async fn path(String, root? : String, directory? : Bool, initial_value? : String, validate? : (String) -> String?, allow_back? : Bool, session? : @prompts.Session) -> @core.PromptOutcome[String] raise @term.TermError
+
+pub async fn path_with(String, exists~ : async (String) -> Bool, is_dir~ : async (String) -> Bool, list_dir~ : async (String) -> Array[@prompts.PathEntry], root? : String, directory? : Bool, initial_value? : String, validate? : (String) -> String?, allow_back? : Bool, session? : @prompts.Session) -> @core.PromptOutcome[String] raise @term.TermError
+
+pub async fn[T] run_prompt(@core.PromptAdapter[T], allow_back? : Bool, session? : @prompts.Session) -> @core.PromptOutcome[T] raise @term.TermError
+
+pub async fn[State] run_wizard(State, Array[@flow.Step[State]], session? : @prompts.Session) -> @core.PromptOutcome[State] raise @term.TermError
+
+pub async fn[T] select(String, Array[@core.SelectOption[T]], initial_index? : Int32, max_items? : Int32, show_instructions? : Bool, allow_back? : Bool, session? : @prompts.Session) -> @core.PromptOutcome[T] raise @term.TermError
+
+pub async fn[T] select_key(String, Array[@core.SelectKeyOption[T]], initial_index? : Int32, case_sensitive? : Bool, allow_back? : Bool, session? : @prompts.Session) -> @core.PromptOutcome[T] raise @term.TermError
+
+pub async fn stream_error(Array[String], session? : @prompts.Session) -> Unit raise @term.TermError
+
+pub async fn stream_info(Array[String], session? : @prompts.Session) -> Unit raise @term.TermError
+
+pub async fn stream_message(Array[String], symbol? : StringView, session? : @prompts.Session) -> Unit raise @term.TermError
+
+pub async fn stream_step(Array[String], session? : @prompts.Session) -> Unit raise @term.TermError
+
+pub async fn stream_success(Array[String], session? : @prompts.Session) -> Unit raise @term.TermError
+
+pub async fn stream_warn(Array[String], session? : @prompts.Session) -> Unit raise @term.TermError
+
+pub async fn stream_warning(Array[String], session? : @prompts.Session) -> Unit raise @term.TermError
+
+pub fn strip_destructive_ansi(StringView) -> String
+
+pub async fn tasks(Array[@prompts.Task], session? : @prompts.Session) -> Unit
+
+pub async fn text(String, placeholder? : String, default_value? : String, initial_value? : String, validate? : (String) -> String?, validate_async? : async (String) -> String?, allow_back? : Bool, session? : @prompts.Session) -> @core.PromptOutcome[String] raise @term.TermError
+
+pub async fn[T] with_spinner(StringView, async (@prompts.Spinner) -> T, done_message? : StringView, error_message? : StringView, cancel_message? : StringView, indicator? : @prompts.SpinnerIndicator, show_timer? : Bool, interval_ms? : Int32, style_frame? : (String) -> String, on_cancel? : () -> Unit, session? : @prompts.Session) -> T
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+pub using @core {type BoxAlign}
+
+pub using @core {type BoxWidth}
+
+pub using @term {type CallbackTerminal}
+
+pub using @core {type ClackTheme}
+
+pub using @ansi {type ColorLevel}
+
+pub using @core {type DateFormat}
+
+pub using @core {type GroupOption}
+
+pub using @core {type InlineDriver}
+
+pub using @core {type MinimalTheme}
+
+pub using @term {type NonInteractivePolicy}
+
+pub using @prompts {type PathEntry}
+
+pub using @prompts {type Progress}
+
+pub using @prompts {type ProgressStyle}
+
+pub using @core {type PromptAdapter}
+
+pub using @core {type PromptOutcome}
+
+pub using @core {type SelectKeyOption}
+
+pub using @core {type SelectOption}
+
+pub using @prompts {type Session}
+
+pub using @core {type SimpleDate}
+
+pub using @prompts {type Spinner}
+
+pub using @prompts {type SpinnerIndicator}
+
+pub using @flow {type Step}
+
+pub using @prompts {type StreamLog}
+
+pub using @ansi {type Styler}
+
+pub using @prompts {type Task}
+
+pub using @prompts {type TaskLog}
+
+pub using @prompts {type TaskLogGroup}
+
+pub using @term {type TermError}
+
+pub using @term {type VirtualTerminal}
+
+// Traits

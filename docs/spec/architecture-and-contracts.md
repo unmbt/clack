@@ -175,6 +175,7 @@ declare pub fn Styler::dim(self : Styler, text : StringView) -> String
 declare pub fn Styler::italic(self : Styler, text : StringView) -> String
 declare pub fn Styler::underline(self : Styler, text : StringView) -> String
 declare pub fn Styler::inverse(self : Styler, text : StringView) -> String
+declare pub fn Styler::hidden(self : Styler, text : StringView) -> String
 declare pub fn Styler::strikethrough(self : Styler, text : StringView) -> String
 declare pub fn Styler::cyan(self : Styler, text : StringView) -> String
 declare pub fn Styler::green(self : Styler, text : StringView) -> String
@@ -183,6 +184,8 @@ declare pub fn Styler::red(self : Styler, text : StringView) -> String
 declare pub fn Styler::magenta(self : Styler, text : StringView) -> String
 declare pub fn Styler::blue(self : Styler, text : StringView) -> String
 declare pub fn Styler::gray(self : Styler, text : StringView) -> String
+declare pub fn Styler::white(self : Styler, text : StringView) -> String
+declare pub fn Styler::bg_white(self : Styler, text : StringView) -> String
 
 /// 剥离所有 CSI / OSC ANSI 转义序列，返回纯可见文本
 declare pub fn strip_ansi(input : StringView) -> String
@@ -192,6 +195,18 @@ declare pub fn display_width(input : StringView) -> Int32
 
 /// 计算单行文本在给定终端列宽 `cols`（最小按 1 保护）下占据的物理终端行数
 declare pub fn wrapped_line_count(line : StringView, cols : Int32) -> Int32
+
+/// 按最大列宽折行并保留 ANSI SGR 样式延续
+declare pub fn wrap_ansi(text : StringView, max_cols : Int32) -> Array[String]
+
+/// 带首行/续行/末行前缀的 ANSI 安全折行（对标原版 Clack wrapTextWithPrefix）
+declare pub fn wrap_text_with_prefix(
+  text : StringView,
+  cols : Int32,
+  prefix : StringView,
+  first_prefix? : StringView,
+  end_prefix? : StringView,
+) -> Array[String]
 ```
 
 ### 3.2 `unmbt/clack/core` 接口契约
@@ -284,21 +299,45 @@ declare pub fn[T] GroupOption::GroupOption(
   options : Array[SelectOption[T]],
 ) -> GroupOption[T]
 
-/// 主题渲染视图模型：彻底解耦交互逻辑与视觉符号
+/// 主题渲染视图模型：彻底解耦交互逻辑与视觉符号（完整保留原版 Clack 1:1 渲染所需字段）
 #derive(Debug, Eq)
 pub(all) enum BodyView {
-  TextInput(rendered_value~ : String, placeholder~ : String?, is_empty~ : Bool)
-  ConfirmToggle(active_yes~ : Bool, yes_label~ : String, no_label~ : String)
+  TextInput(
+    rendered_value~ : String,
+    cursor_pos~ : Int32,
+    placeholder~ : String?,
+    is_empty~ : Bool,
+    is_password~ : Bool,
+    raw_text~ : String,
+  )
+  ConfirmToggle(
+    active_yes~ : Bool,
+    yes_label~ : String,
+    no_label~ : String,
+    vertical~ : Bool,
+  )
   OptionList(
     items~ : Array[OptionRowView],
-    window_start~ : Int32,
+    cursor~ : Int32,
+    max_items~ : Int32?,
     total_count~ : Int32,
+    total_unfiltered~ : Int32,
     filter_query~ : String?,
+    filter_cursor~ : Int32,
+    filter_placeholder~ : String?,
+    is_navigating~ : Bool,
+    complete_on_tab~ : Bool,
+    show_instructions~ : Bool,
+    is_multi~ : Bool,
   )
   GroupOptionList(
     rows~ : Array[GroupRowView],
-    window_start~ : Int32,
+    cursor~ : Int32,
+    max_items~ : Int32?,
     total_count~ : Int32,
+    selectable_groups~ : Bool,
+    group_spacing~ : Int32,
+    show_instructions~ : Bool,
   )
 }
 
@@ -320,8 +359,14 @@ pub(all) enum GroupRowView {
     all_selected~ : Bool,
     partial_selected~ : Bool,
     group_active~ : Bool,
+    selectable~ : Bool,
   )
-  Item(row~ : OptionRowView, is_last_in_group~ : Bool, in_active_group~ : Bool)
+  Item(
+    row~ : OptionRowView,
+    is_last_in_group~ : Bool,
+    in_active_group~ : Bool,
+    selectable_groups~ : Bool,
+  )
 }
 
 #derive(Debug, Eq)
@@ -330,7 +375,21 @@ pub(all) struct FrameSpec {
   message : String
   body : BodyView
   submitted_summary : String?
+  with_guide : Bool
+  max_rows : Int32?
 }
+
+/// 1:1 复刻原版 Clack limitOptions 滑动窗口与物理行数裁剪算法
+declare pub fn limit_options(
+  styled_items : Array[String],
+  cursor : Int32,
+  cols : Int32,
+  rows : Int32,
+  max_items? : Int32,
+  column_padding? : Int32,
+  row_padding? : Int32,
+  ellipsis? : String,
+) -> Array[String]
 
 /// 可插拔视觉主题契约
 pub(open) trait Theme {

@@ -1,0 +1,60 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "unmbt/clack/ansi"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn detect_color_level(is_tty~ : Bool, env_lookup~ : (String) -> String?) -> ColorLevel
+
+pub fn display_width(StringView) -> Int32
+
+pub fn strip_ansi(StringView) -> String
+
+pub fn strip_destructive_ansi(StringView) -> String
+
+pub fn wrap_ansi(StringView, Int32) -> Array[String]
+
+pub fn wrap_text_with_prefix(StringView, Int32, StringView, first_prefix? : StringView, end_prefix? : StringView) -> Array[String]
+
+pub fn wrapped_line_count(StringView, Int32) -> Int32
+
+// Errors
+
+// Types and methods
+#derive(Eq, Hash, @debug.Debug)
+pub(all) enum ColorLevel {
+  None
+  Ansi16
+  Ansi256
+  TrueColor
+}
+
+#derive(Eq, @debug.Debug)
+pub struct Styler {
+  level : ColorLevel
+}
+pub fn Styler::Styler(level? : ColorLevel) -> Self
+pub fn Styler::bg_cyan(Self, StringView) -> String
+pub fn Styler::bg_white(Self, StringView) -> String
+pub fn Styler::blue(Self, StringView) -> String
+pub fn Styler::bold(Self, StringView) -> String
+pub fn Styler::cyan(Self, StringView) -> String
+pub fn Styler::dim(Self, StringView) -> String
+pub fn Styler::enabled(Self) -> Bool
+pub fn Styler::gray(Self, StringView) -> String
+pub fn Styler::green(Self, StringView) -> String
+pub fn Styler::hidden(Self, StringView) -> String
+pub fn Styler::inverse(Self, StringView) -> String
+pub fn Styler::italic(Self, StringView) -> String
+pub fn Styler::magenta(Self, StringView) -> String
+pub fn Styler::red(Self, StringView) -> String
+pub fn Styler::strikethrough(Self, StringView) -> String
+pub fn Styler::underline(Self, StringView) -> String
+pub fn Styler::white(Self, StringView) -> String
+pub fn Styler::yellow(Self, StringView) -> String
+
+// Type aliases
+
+// Traits

@@ -1,0 +1,12 @@
+import {
+  "moonbitlang/core/async",
+  "unmbt/clack",
+}
+
+supported_targets = "-all+native+js+wasm"
+
+pkgtype(kind: "executable")
+
+options(
+  "allow-experimental-packages": [ "moonbitlang/core/async" ],
+)

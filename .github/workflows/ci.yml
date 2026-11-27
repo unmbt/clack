@@ -1,0 +1,147 @@
+name: CI and Publish
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        if: matrix.os == 'ubuntu-latest'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup MoonBit
+        uses: hustcer/setup-moonbit@v1
+        with:
+          version: '1.0.0-rc1+3c0520448'
+          core-version: '1.0.0-rc1+3c0520448'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Registry & Dependencies
+        run: moon update
+
+      - name: Check Formatting
+        if: matrix.os == 'ubuntu-latest'
+        run: moon fmt --check
+
+      - name: Check Native
+        run: moon check --deny-warn --target native
+
+      - name: Test Native
+        run: moon test --target native
+
+      - name: Build Demo (Native Release)
+        run: moon build cmd/demo --target native --release
+
+      - name: Smoke Test Demo (Non-Interactive Pipe)
+        shell: bash
+        run: |
+          binary="_build/native/release/build/cmd/demo/demo"
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            binary="${binary}.exe"
+          elif [ ! -f "$binary" ] && [ -f "${binary}.exe" ]; then
+            binary="${binary}.exe"
+          fi
+          test -f "$binary"
+          NO_COLOR=1 "$binary" < /dev/null
+
+      - name: Check & Test Multi-Target (js, wasm, wasm-gc)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          moon check --deny-warn --target js
+          moon check --deny-warn --target wasm
+          moon check --deny-warn ansi --target wasm-gc
+          moon check --deny-warn core --target wasm-gc
+          moon test --target js
+          moon test --target wasm
+          moon test ansi --target wasm-gc
+          moon test core --target wasm-gc
+          moon build cmd/web_demo --target js
+
+  publish:
+    name: Publish to mooncakes.io
+    needs: verify
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup MoonBit
+        uses: hustcer/setup-moonbit@v1
+        with:
+          version: '1.0.0-rc1+3c0520448'
+          core-version: '1.0.0-rc1+3c0520448'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Registry & Dependencies
+        run: moon update
+
+      - name: Verify Tag Version
+        shell: bash
+        run: |
+          module_version="$(sed -n 's/^[[:space:]]*version[[:space:]]*=[[:space:]]*"\([^"]*\)".*/\1/p' moon.mod | head -n 1)"
+          if [ -z "${module_version}" ]; then
+            echo "Failed to read version from moon.mod."
+            exit 1
+          fi
+          if [ "v${module_version}" != "${GITHUB_REF_NAME}" ]; then
+            echo "Tag ${GITHUB_REF_NAME} does not match moon.mod version ${module_version}."
+            exit 1
+          fi
+
+      - name: Configure Mooncakes Credentials
+        shell: bash
+        env:
+          MOONCAKES_CREDENTIALS: ${{ secrets.MOONCAKES_CREDENTIALS }}
+        run: |
+          if [ -z "${MOONCAKES_CREDENTIALS}" ]; then
+            echo "MOONCAKES_CREDENTIALS is not configured."
+            exit 1
+          fi
+          install -d -m 700 "${HOME}/.moon"
+          printf '%s' "${MOONCAKES_CREDENTIALS}" > "${HOME}/.moon/credentials.json"
+          chmod 600 "${HOME}/.moon/credentials.json"
+
+      - name: Publish Module
+        run: moon publish
+
+  release:
+    name: Create GitHub Release
+    needs: [verify, publish]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
